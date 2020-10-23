@@ -4,4 +4,13 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SpotifyAPI.Web" Version="6.0.0-beta.11" />
+    <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.0.0-beta.11" />
+  </ItemGroup>
+
 </Project>

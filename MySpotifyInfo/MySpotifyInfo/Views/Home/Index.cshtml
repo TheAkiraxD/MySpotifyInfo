@@ -1,8 +1,150 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Index - Check out my Spotify info!";
+    //222326
+
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+
+    @@font-face {
+      font-family: CircularBold;
+      src: url(/fonts/circular-bold.woff);
+    }
+    @@font-face {
+        font-family: Circular;
+        src: url(/fonts/circular-book.woff);
+    }
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Circular';
+        overflow: hidden;
+    }
+    h1, h2, h3, h4, h5 {
+        font-family: 'CircularBold';
+        letter-spacing: -0.9px;
+        
+    }
+    p {
+        line-height: 24px;
+        font-size: 20px;
+        margin-block-start: 1.5px;
+        margin-block-end: 1.5px;
+    }
+    h1 {
+        font-size: 40px;
+        margin-block-start: 10px;
+        margin-block-end: 6px;
+    }
+    .footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        height: 60px;
+        padding-left: 20px;
+        border-top: 1px solid #303236;
+        background-color: #222326;
+        color: white;
+    }
+
+    .container {
+        display: flex;
+        width: 100%;
+        padding: 20px;
+        margin: 60px,0 ,0 0;
+        height: 300px;
+        flex-direction: row;
+        justify-content: center;
+    }
+    .fa-spotify {
+        color: #1DB954;
+        margin-bottom: 0px;
+        font-size: 60px;
+
+    }
+    .spotify-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .btn-spotify:active:focus,
+    .btn-spotify:focus:focus,
+    .btn-spotify.active:focus {
+        outline: 0;
+    }
+    .btn-spotify:active,
+    .btn-spotify.active {
+        -webkit-box-shadow: none;
+        box-shadow: none;
+        -webkit-transition-duration: 0;
+        transition-duration: 0;
+    }
+    .btn-spotify {
+        color: #FFF;
+        background-color: #1DB954;
+        font-size: 16px;
+        line-height: 1;
+        border-radius: 500px;
+        padding: 19px 56px 21px;
+        margin: 32px 0;
+        display: inline-block;
+        width: 220px;
+        height: 50px;
+        border: 0;
+        font-weight: 700;
+        cursor: pointer;
+        -webkit-transition-property: background-color, border-color, color, -webkit-box-shadow, -webkit-filter;
+        transition-property: background-color, border-color, color, -webkit-box-shadow, -webkit-filter;
+        transition-property: background-color, border-color, color, box-shadow, filter;
+        transition-property: background-color, border-color, color, box-shadow, filter, -webkit-box-shadow, -webkit-filter;
+        -webkit-transition-duration: .3s;
+        transition-duration: .3s;
+    }
+    .btn-spotify:hover {
+        background-color: #4bdf80;
+    }
+</style>
+
+<div class="spotify-section">
+    <i class="fab fa-spotify"></i>
+    <h1 class="display-4">Wanna checkout what I am listening?</h1>
+    <p>For that you will need a Spotify account.</p>
+    <input class="btn-spotify" type="button" name="checkout" value="Check it out" onclick="StartLoginRequest()" />
+    <div id="oresult">
+
+    </div>
 </div>
+
+<script>
+    var loginRequested = false;
+
+    function StartLoginRequest() {
+        $.ajax({
+            url: "@Url.Action("StartLoginRequest", "Home")",
+            success: function (loginUrlRequest) {
+                loginRequested = true;
+                window.open(loginUrlRequest, '_blank', 'width=800, height=900');
+            }
+        });
+    }
+
+    window.setInterval(function () {
+        if (loginRequested) {
+            console.log("requested");
+            $.ajax({
+                url: "@Url.Action("GetSpotifyAnswer", "Home")",
+                success: function (resultado) {
+                    if (resultado != "") {
+                        loginRequested = false;
+                        $("#oresult").text(resultado);
+                        clearInterval();
+                    }
+                }
+            });
+        }
+    }, 2000);
+
+</script>
