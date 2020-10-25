@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.VisualBasic.CompilerServices;
 using MySpotifyInfo.Models;
 using MySpotifyInfo.Services.Abstraction;
 using SpotifyAPI.Web;
@@ -75,24 +76,71 @@ namespace MySpotifyInfo.Services
             if(itemContext != null)
             {
                 var contextType = GetContextType(itemContext);
-                 if (contextType == SpotifyContextType.playlist)
-                 {
-                    var playlistId = GetPlaylistIdFromHref(itemContext.Href);
-                    var playlistRequest = BuildPlaylistRequestWithFields();
-                    var playlist = await GetPlaylist(client, playlistRequest, playlistId);
+                var itemId = GetIdFromHref(itemContext.Href);
 
-                    displayCard.TrackName = recentlyPlayerTrack.Name;
-                    displayCard.ContextType = SpotifyContextType.playlist;
-                    displayCard.ContextName = playlist.Name;
-                    displayCard.ContextImage = playlist.Images.FirstOrDefault().Url;
-                    displayCard.ArtistNames = BuildArtistNames(recentlyPlayerTrack.Artists);
-                    
-                 }
+                displayCard.TrackName = recentlyPlayerTrack.Name;
+                displayCard.ContextType = SpotifyContextType.playlist;
+                displayCard.ArtistNames = BuildArtistNames(recentlyPlayerTrack.Artists);
+                displayCard.ContextType = contextType;
+
+                if (contextType == SpotifyContextType.playlist)
+                {
+                    await HandlePlaylist(client, displayCard, itemId);
+                    return displayCard;
+                }
+
+                if (contextType == SpotifyContextType.artist)
+                {
+                    await HandleArtirst(client, displayCard, itemId);
+                    return displayCard;
+                }
+
+                if (contextType == SpotifyContextType.album)
+                {
+                    await HandleAlbum(client, displayCard, itemId);
+                    return displayCard;
+                }
             }
 
             return displayCard;
 
         }
+
+        private async Task HandleAlbum(SpotifyClient client, DisplayCard displayCard, string itemId)
+        {
+            var album = await GetAlbum(client, itemId);
+
+            displayCard.ContextName = album.Name;
+            displayCard.ContextImage = album.Images.FirstOrDefault().Url;
+        }
+
+        private async Task HandleArtirst(SpotifyClient client, DisplayCard displayCard, string itemId)
+        {
+            var artist = await GetArtist(client, itemId);
+
+            displayCard.ContextName = artist.Name;
+            displayCard.ContextImage = artist.Images.FirstOrDefault().Url;
+        }
+
+        private async Task HandlePlaylist(SpotifyClient client, DisplayCard displayCard, string itemId)
+        {
+            var playlistRequest = BuildPlaylistRequestWithFields();
+            var playlist = await GetPlaylist(client, playlistRequest, itemId);
+
+            displayCard.ContextName = playlist.Name;
+            displayCard.ContextImage = playlist.Images.FirstOrDefault().Url;
+        }
+
+        public async Task<FullAlbum> GetAlbum(SpotifyClient client, string id)
+        {
+            return await client.Albums.Get(id);
+        }
+
+        private async Task<FullArtist> GetArtist(SpotifyClient client, string id)
+        {
+            return await client.Artists.Get(id);
+        }
+
         private SpotifyContextType GetContextType(Context context)
         {
             return (SpotifyContextType)Enum.Parse(typeof(SpotifyContextType), context.Type);
@@ -107,7 +155,7 @@ namespace MySpotifyInfo.Services
             return await client.Playlists.Get(id, request);
         }
 
-        private string GetPlaylistIdFromHref(string href)
+        private string GetIdFromHref(string href)
         {
             return href.Substring(href.LastIndexOf("/") + 1);
         }
