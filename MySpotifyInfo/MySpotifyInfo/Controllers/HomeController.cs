@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MySpotifyInfo.Services.Abstraction;
 using SpotifyAPI.Web;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MySpotifyInfo.Controllers
@@ -10,33 +13,32 @@ namespace MySpotifyInfo.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly IConfiguration _configuration;
-        private static SpotifyClient _client = null;
-        private static string _spotifyClientId;
-        private static string _spotifyClientSecret;
+        private readonly ISpotifyApiService _spotifyApiService;
+        private static SpotifyClient _spotifyClient = null;
+        private static string _callbackUrl;
 
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
+        //TODO: for the love of god, get this from the httpcontext
+        private const string APPLICATION_BASE_URL = "http://localhost:62543";
+
+        public HomeController(ILogger<HomeController> logger, ISpotifyApiService spotifyApiService)
         {
             _logger = logger;
-            _configuration = configuration;
-            _spotifyClientId = _configuration.GetSection("SpotifyKeys").GetSection("ClientId").Value;
-            _spotifyClientSecret = _configuration.GetSection("SpotifyKeys").GetSection("ClientSecret").Value;
+            _spotifyApiService = spotifyApiService;
         }
 
         public IActionResult Index()
         {
+            if (string.IsNullOrEmpty(_callbackUrl))
+            {
+                _callbackUrl = APPLICATION_BASE_URL + Url.Action("Callback");
+            }
             return View();
         }
 
         [HttpGet]
         public IActionResult StartLoginRequest()
         {
-            var callbackUrl = new Uri(Url.Action("Callback"));
-            var loginRequest = new LoginRequest(callbackUrl, _spotifyClientId, LoginRequest.ResponseType.Code)
-            {
-                Scope = new[] { Scopes.UserReadCurrentlyPlaying, Scopes.UserReadRecentlyPlayed }
-            };
-            var loginRequestUrl = loginRequest.ToUri().ToString();
+            var loginRequestUrl = _spotifyApiService.BuildLoginRequestUrl(_callbackUrl);
 
             if (string.IsNullOrEmpty(loginRequestUrl))
             {
@@ -49,30 +51,30 @@ namespace MySpotifyInfo.Controllers
         [HttpGet]
         public async Task<IActionResult> GetSpotifyAnswer()
         {
-            if (_client == null)
+            if (_spotifyClient == null)
             {
                 return Ok();
             }
 
-            var track = await _client.Player.GetCurrentlyPlaying(new PlayerCurrentlyPlayingRequest(PlayerCurrentlyPlayingRequest.AdditionalTypes.Episode));
-            
+            var currentlyPlayingCard = await _spotifyApiService.BuildCurrentlyPlayingCard(_spotifyClient);
+            if(currentlyPlayingCard != null)
+            {
+                return Ok(currentlyPlayingCard);
+            }
+
+            var recentlyPlayedItem = await _spotifyApiService.BuildRecentlyPlayedCard(_spotifyClient);
+
+
+
             return Ok("buya!");
         }
 
-
         public async Task<IActionResult> Callback(string code)
         {
-            var response = await new OAuthClient().RequestToken(
-              new AuthorizationCodeTokenRequest(_spotifyClientId, _spotifyClientSecret, code, new Uri(Url.Action("Callback")))
-            );
-
-            var config = SpotifyClientConfig
-              .CreateDefault()
-              .WithAuthenticator(new AuthorizationCodeAuthenticator(_spotifyClientId, _spotifyClientSecret, response));
-
-            _client = new SpotifyClient(config);
+            _spotifyClient = await _spotifyApiService.BuildClient(code, _callbackUrl);
             return View();
         }
+
 
     }
 }

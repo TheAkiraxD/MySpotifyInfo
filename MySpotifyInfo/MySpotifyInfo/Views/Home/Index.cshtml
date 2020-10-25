@@ -106,15 +106,56 @@
     .btn-spotify:hover {
         background-color: #4bdf80;
     }
+    .btn-spotify.disabled,
+    .btn-spotify[disabled]{
+        background-color: #C1C3C6;
+    }
+    .spotify-content-section {
+        width: 450px;
+        height: 150px;
+        background-color: #303236;
+        display: flex;
+        justify-content: center;
+        padding: 8px;
+    }
+    .album-image img {
+        width: 110px;
+        height: auto;
+    }
+    .spotify-info{
+        display: flex;
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-evenly;
+    }
+    .current-info{
+        width: 180px;
+        display: flex;
+        flex-direction: column;
+        color: white;
+    }
+
 </style>
 
 <div class="spotify-section">
     <i class="fab fa-spotify"></i>
     <h1 class="display-4">Wanna checkout what I am listening?</h1>
     <p>For that you will need a Spotify account.</p>
-    <input class="btn-spotify" type="button" name="checkout" value="Check it out" onclick="StartLoginRequest()" />
-    <div id="oresult">
-
+    <input class="btn-spotify" id="btnSpotify" type="button" name="checkout" value="Check it out" onclick="StartLoginRequest()" />
+    <div class="spotify-content-section" id="spotifyContentSection">
+        <div class="spotify-info" id="spotifyInfo">
+            <div id="albumImage" class="album-image">
+                <img src="https://i.scdn.co/image/ab67616d0000b273f83110210248c00fe02bf1e0"/>
+            </div>
+            <div class="current-info">
+                <span id="userName" style="font-size: 24px; font-family: 'CircularBold'; margin-bottom: 4px;"></span>
+                <span id="trackName"></span>
+                <span id="artistName"></span>
+                <span id="playlistName" style="display:none;"></span>
+                <span id="albumName" style="display:none;"></span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -122,11 +163,35 @@
     var loginRequested = false;
 
     function StartLoginRequest() {
+        $("#btnSpotify").prop('disabled', true);
         $.ajax({
             url: "@Url.Action("StartLoginRequest", "Home")",
+            async: false,
             success: function (loginUrlRequest) {
                 loginRequested = true;
                 window.open(loginUrlRequest, '_blank', 'width=800, height=900');
+            },
+            error: function () {
+                $("#spotifyContentSection").prop('disabled', false);
+            }
+        });
+
+    }
+    function RequestTrackInfo() {
+        $.ajax({
+            url: "@Url.Action("GetSpotifyAnswer", "Home")",
+            async: false,
+            success: function (resultado) {
+                if (resultado != "") {
+                    loginRequested = false;
+
+                    clearInterval();
+                    $("#spotifyContentSection").animate({
+                        height: "150px"
+                    }, 700, function () {
+                        console.log("opa")
+                    });
+                }
             }
         });
     }
@@ -134,16 +199,7 @@
     window.setInterval(function () {
         if (loginRequested) {
             console.log("requested");
-            $.ajax({
-                url: "@Url.Action("GetSpotifyAnswer", "Home")",
-                success: function (resultado) {
-                    if (resultado != "") {
-                        loginRequested = false;
-                        $("#oresult").text(resultado);
-                        clearInterval();
-                    }
-                }
-            });
+            RequestTrackInfo();
         }
     }, 2000);
 
