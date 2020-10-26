@@ -16,9 +16,7 @@ namespace MySpotifyInfo.Controllers
         private readonly ISpotifyApiService _spotifyApiService;
         private static SpotifyClient _spotifyClient = null;
         private static string _callbackUrl;
-
-        //TODO: for the love of god, get this from the httpcontext
-        private const string APPLICATION_BASE_URL = "http://localhost:62543";
+        private const string APPLICATION_BASE_URL = "http://localhost:62543"; //TODO: for the love of god, get this from the httpcontext
 
         public HomeController(ILogger<HomeController> logger, ISpotifyApiService spotifyApiService)
         {
@@ -39,12 +37,10 @@ namespace MySpotifyInfo.Controllers
         public IActionResult StartLoginRequest()
         {
             var loginRequestUrl = _spotifyApiService.BuildLoginRequestUrl(_callbackUrl);
-
             if (string.IsNullOrEmpty(loginRequestUrl))
             {
                 return NotFound();
             }
-
             return Ok(loginRequestUrl);
         }
 
@@ -64,9 +60,7 @@ namespace MySpotifyInfo.Controllers
 
             var recentlyPlayedItem = await _spotifyApiService.BuildRecentlyPlayedCard(_spotifyClient);
 
-
-
-            return Ok("buya!");
+            return Ok(recentlyPlayedItem);
         }
 
         public async Task<IActionResult> Callback(string code)

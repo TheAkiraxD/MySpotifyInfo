@@ -36,6 +36,9 @@
         margin-block-start: 10px;
         margin-block-end: 6px;
     }
+    span{
+        margin: 3px, 0, 1px, 0;
+    }
     .footer {
         position: fixed;
         bottom: 0;
@@ -112,13 +115,15 @@
     }
     .spotify-content-section {
         width: 450px;
-        height: 150px;
+        height: 0px;
         background-color: #303236;
-        display: flex;
+        display: none;
         justify-content: center;
         padding: 8px;
+        flex-direction: column;
+        align-items: center;
     }
-    .album-image img {
+    .context-image img {
         width: 110px;
         height: auto;
     }
@@ -128,12 +133,16 @@
         flex-direction: row;
         align-items: center;
         justify-content: space-evenly;
+        opacity: 0;
     }
     .current-info{
-        width: 180px;
+        width: 250px;
         display: flex;
         flex-direction: column;
         color: white;
+    }
+    .loadingImage{
+        display: none;
     }
 
 </style>
@@ -144,16 +153,16 @@
     <p>For that you will need a Spotify account.</p>
     <input class="btn-spotify" id="btnSpotify" type="button" name="checkout" value="Check it out" onclick="StartLoginRequest()" />
     <div class="spotify-content-section" id="spotifyContentSection">
+        <img id="loadingImage" src="https://icon-library.net//images/loading-icon-transparent-background/loading-icon-transparent-background-12.jpg" width="40" />
         <div class="spotify-info" id="spotifyInfo">
-            <div id="albumImage" class="album-image">
-                <img src="https://i.scdn.co/image/ab67616d0000b273f83110210248c00fe02bf1e0"/>
+            <div id="contextImage" class="context-image">
+                <img />
             </div>
-            <div class="current-info">
+            <div class="current-info" id="currentInfo">
                 <span id="userName" style="font-size: 24px; font-family: 'CircularBold'; margin-bottom: 4px;"></span>
                 <span id="trackName"></span>
                 <span id="artistName"></span>
-                <span id="playlistName" style="display:none;"></span>
-                <span id="albumName" style="display:none;"></span>
+                <span id="contextName"></span>
             </div>
         </div>
     </div>
@@ -164,6 +173,8 @@
 
     function StartLoginRequest() {
         $("#btnSpotify").prop('disabled', true);
+        $("#spotifyContentSection").css("display", "flex").css("height", "auto");
+        $("#loadingImage").show();
         $.ajax({
             url: "@Url.Action("StartLoginRequest", "Home")",
             async: false,
@@ -181,19 +192,28 @@
         $.ajax({
             url: "@Url.Action("GetSpotifyAnswer", "Home")",
             async: false,
-            success: function (resultado) {
-                if (resultado != "") {
+            success: function (displayCard) {
+                if (displayCard != "") {
+                    debugger;
                     loginRequested = false;
-
+                    $("#loadingImage").hide();
                     clearInterval();
                     $("#spotifyContentSection").animate({
                         height: "150px"
-                    }, 700, function () {
-                        console.log("opa")
-                    });
+                    }, 600, DisplayCardInfo(displayCard));
                 }
             }
         });
+    }
+
+    function DisplayCardInfo(displayCard) {
+        if (displayCard) {
+            $("#trackName").text(displayCard.trackName);
+            $("#artistName").text(displayCard.artistNames);
+            $("#contextImage img").attr("src", displayCard.contextImage);
+            $("#contextName").text(displayCard.contextName);
+            $("#spotifyInfo").animate({ opacity: 1 }, 350);
+        }
     }
 
     window.setInterval(function () {
