@@ -208,6 +208,7 @@
 
     function DisplayCardInfo(displayCard) {
         if (displayCard) {
+            $("#userName").text(displayCard.userName);
             $("#trackName").text(displayCard.trackName);
             $("#artistName").text(displayCard.artistNames);
             $("#contextImage img").attr("src", displayCard.contextImage);

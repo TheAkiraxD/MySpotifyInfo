@@ -49,11 +49,15 @@ namespace MySpotifyInfo.Services
         public async Task<DisplayCard> BuildCurrentlyPlayingCard(SpotifyClient client)
         {
             var currentlyPlayingTrack = await client.Player.GetCurrentlyPlaying(new PlayerCurrentlyPlayingRequest(PlayerCurrentlyPlayingRequest.AdditionalTypes.Episode));
+
+            var user = await GetUser(client);
+
             if(currentlyPlayingTrack != null)
             {
                 var fullTrack = (FullTrack)currentlyPlayingTrack.Item;
                 return new DisplayCard()
                 {
+                    UserName = user.DisplayName,
                     TrackName = fullTrack.Name,
                     ContextType = GetContextType(currentlyPlayingTrack.Context),
                     ContextName = fullTrack.Album.Name,
@@ -67,7 +71,7 @@ namespace MySpotifyInfo.Services
         public async Task<DisplayCard> BuildRecentlyPlayedCard(SpotifyClient client)
         {
             var displayCard = new DisplayCard();
-
+            var user = await GetUser(client);
             var recentlyPlayedItem = (await client.Player.GetRecentlyPlayed(new PlayerRecentlyPlayedRequest() { Limit = 1, }))?.Items?.FirstOrDefault();
             var recentlyPlayerTrack = recentlyPlayedItem.Track;
 
@@ -78,6 +82,7 @@ namespace MySpotifyInfo.Services
                 var contextType = GetContextType(itemContext);
                 var itemId = GetIdFromHref(itemContext.Href);
 
+                displayCard.UserName = user.DisplayName;
                 displayCard.TrackName = recentlyPlayerTrack.Name;
                 displayCard.ContextType = SpotifyContextType.playlist;
                 displayCard.ArtistNames = BuildArtistNames(recentlyPlayerTrack.Artists);
@@ -131,7 +136,12 @@ namespace MySpotifyInfo.Services
             displayCard.ContextImage = playlist.Images.FirstOrDefault().Url;
         }
 
-        public async Task<FullAlbum> GetAlbum(SpotifyClient client, string id)
+        private async Task<PrivateUser> GetUser(SpotifyClient client)
+        {
+            return await client.UserProfile.Current();
+        }
+
+        private async Task<FullAlbum> GetAlbum(SpotifyClient client, string id)
         {
             return await client.Albums.Get(id);
         }
